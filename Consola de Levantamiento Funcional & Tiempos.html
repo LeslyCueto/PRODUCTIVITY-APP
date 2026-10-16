@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consola de Levantamiento Funcional & Tiempos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#F3F6FB;--card:#fff;--tx:#253247;--mu:#71829D;--bd:#E0E8F2;--hi:#EAF2FF;--alt:#FAFCFF;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0E1424;--card:#161E33;--tx:#E6ECF8;--mu:#97A6C3;--bd:#27324D;--hi:#16294A;--alt:#121A2E}}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Figtree',system-ui,sans-serif;color:var(--tx);background:var(--bg)}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.sel{border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);padding:8px 10px;font:600 13px 'Figtree',sans-serif;min-width:190px}
+.btn{border:0;border-radius:8px;padding:10px 14px;font:700 13px 'Figtree',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.g{background:#9AF51A;color:#10182D}.o{background:var(--card);border:1px solid var(--bd);color:var(--tx)}
+.row{display:grid;grid-template-columns:40px minmax(250px,2.6fr) 1.4fr .9fr .8fr 1.5fr 104px;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--bd);font-size:12.5px}
+.th{background:var(--bg)}
+.sm{font-size:11px;color:var(--mu)}
+.bd{display:inline-block;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.ic{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:var(--card);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--tx)}
+.mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
+.card{border-radius:12px;padding:14px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #0066B3;outline-offset:2px}
+#main{display:grid;grid-template-columns:7fr 3fr;min-height:calc(100vh - 78px)}
+#app[inert]{filter:blur(6px);pointer-events:none}
+.wrap{overflow-x:auto}.tb{min-width:860px}
+#modal{position:fixed;inset:0;background:rgba(16,24,45,.6);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+#toast{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:#10182D;color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;display:none;z-index:10;max-width:340px}
+@media(max-width:900px){#main{grid-template-columns:1fr}header{grid-template-columns:1fr!important;height:auto!important;gap:6px;padding:10px 16px!important}}
+</style>
+</head>
+<body>
+<div id="app" inert>
+<header style="min-height:78px;height:78px;background:var(--card);border-bottom:1px solid var(--bd);display:grid;grid-template-columns:1fr 2fr 1fr;align-items:center;padding:0 24px">
+<div style="display:flex;align-items:center;gap:10px"><div style="font-weight:800;font-size:26px;color:#0066B3;letter-spacing:-.02em">BanBif<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#9AF51A;margin-left:3px"></span></div><div style="border-left:1px solid var(--bd);padding-left:10px"><div class="lbl" style="color:#0066B3">Operaciones &amp; Valor</div><div style="font-size:12px;font-weight:600">Productividad &amp; Organización</div></div></div>
+<div style="text-align:center"><div style="font-weight:800;font-size:18px">Consola de Levantamiento Funcional &amp; Tiempos</div><div class="sm">Plataforma de Productividad &amp; Organización — Sede San Isidro</div></div>
+<div style="justify-self:end;display:flex;align-items:center;gap:8px"><span class="bd" style="background:var(--hi);color:#0066B3">DATOS DEMOSTRATIVOS</span><button class="btn o" id="who" onclick="askName()" aria-label="Cambiar analista"></button></div>
+</header>
+<div id="main">
+<main style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0">
+<section style="background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+<div><label class="lbl" for="st">Equipo</label><br><select class="sel" id="st" onchange="setTeam(this.value)"></select></div>
+<div><label class="lbl" for="se">Colaborador</label><br><select class="sel" id="se" onchange="S.emp=this.value;draw()"></select></div>
+<div><label class="lbl" for="sb">Base del análisis</label><br><select class="sel" id="sb" onchange="S.basis=this.value;draw()"><option value="med">Carga medida</option><option value="est">Carga estimada (estándar × frecuencia)</option></select></div>
+<div style="flex:1"></div>
+<button class="btn o" onclick="exportXls()">⬇ Descargar Excel</button>
+<button class="btn g" onclick="startSession()">▶ Iniciar Toma de Tiempos</button>
+</section>
+<section style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+<input id="q" class="sel" style="flex:1;min-width:240px;padding:10px 12px" placeholder="Buscar por proceso, actividad o rol..." aria-label="Buscar" oninput="S.q=this.value;drawT()">
+<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" id="par" onchange="S.par=this.checked;draw()">Analizar solo Pareto 80/20</label>
+</section>
+<div id="pnote"></div>
+<section style="background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden"><div class="wrap"><div class="tb" id="tbl"></div></div></section>
+<div class="sm">Datos ilustrativos; no corresponden a información operativa real de BanBif. Guardado solo en este navegador (no es una base de datos corporativa).</div>
+</main>
+<aside id="side" style="background:var(--card);border-left:1px solid var(--bd);padding:20px;display:flex;flex-direction:column;gap:12px"></aside>
+</div>
+</div>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+<form onsubmit="return enter(event)" style="background:var(--card);color:var(--tx);border-radius:14px;padding:26px;width:min(400px,100%)">
+<div style="font-weight:800;font-size:22px;color:#0066B3">BanBif<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9AF51A;margin-left:3px"></span></div>
+<h2 id="mt" style="margin:10px 0 4px;font-size:18px">¿Quién va a tomar los tiempos?</h2>
+<p class="sm" style="margin:0 0 14px;font-size:12px">Tu nombre quedará registrado en cada medición que realices.</p>
+<label class="lbl" for="nm">Nombre y apellido</label>
+<input id="nm" class="sel" style="width:100%;margin:4px 0 14px;padding:11px" autocomplete="name" required maxlength="60" placeholder="Ej. Lesly Pérez">
+<button class="btn g" style="width:100%;justify-content:center;padding:12px" type="submit">Ingresar a la consola</button>
+</form></div>
+<div id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const K='bb_tiempos_v1';
+const D={teams:[['T1','Operaciones y Canales'],['T2','Venta PJ'],['T3','Post-Venta PJ'],['T4','Venta PN']].map(([id,n])=>({id,n})),
+emps:[['E1','Mariana Valdivia','Analista de Créditos','T1'],['E2','Lucía Paredes','Asistente de Operaciones','T1'],['E3','Carlos Mendoza','Analista Senior','T1'],['E4','Jorge Benavides','Analista de Garantías','T1'],['E5','Rosa Quispe','Ejecutiva de Venta','T2'],['E6','Diego Salas','Analista Comercial','T2'],['E7','Ana Ruiz','Analista Post-Venta','T3'],['E8','Luis Vega','Asistente de Archivo','T3']].map(([id,n,r,t])=>({id,n,r,t})),
+macros:[{id:'M1',n:'Originación & Admisión',c:'#0066B3',bg:'#EAF2FF'},{id:'M2',n:'Post-Venta & Custodia',c:'#7C4DFF',bg:'#F1ECFF'}],
+procs:[['P1','M1','Evaluación y Cotejo de Carpetas Hipotecarias','Revisión documental previa a la aprobación'],['P2','M1','Validación Previa al Desembolso de Líneas','Control de condiciones suspensivas'],['P3','M2','Ingreso de Garantías en Core Bancario','Registro y valoración de garantías'],['P4','M2','Digitalización e Indización de Expedientes Físicos','Escaneo, indexación y archivo']].map(([id,m,n,d])=>({id,m,n,d})),
+acts:[['A1','P1','Cotejo de coberturas y endosos con broker externo','Verificación de pólizas contra expediente','E1',7.5,45],['A2','P1','Carga digital de tasaciones periciales en el CRM','Registro y adjunto de informes de tasación','E2',10.5,30],['A3','P2','Verificación de condiciones suspensivas','Revisión de requisitos previos','E3',12,20],['A4','P2','Emisión de conformidad de desembolso','Visto bueno y registro','E3',6,20],['A5','P3','Digitación de escrituras notariales en módulo de garantías','Captura de datos de la escritura','E4',9,25],['A6','P3','Emisión de constancia de custodia valorada','Generación y firma de constancia','E2',5,15],['A7','P4','Digitalización de expedientes físicos','Escaneo por lote','E8',4,60],['A8','P4','Indización de expedientes en repositorio','Metadatos y clasificación','E7',3,60]].map(([id,p,n,d,e,s,f])=>({id,p,n,d,e,s,f,u:'por día'}))};
+const emp=id=>D.emps.find(e=>e.id==id),proc=id=>D.procs.find(p=>p.id==id),macro=id=>D.macros.find(m=>m.id==id),act=id=>D.acts.find(a=>a.id==id);
+const tm=a=>emp(a.e).t,mo=a=>proc(a.p).m;
+let S={analyst:'',team:'T1',emp:'',q:'',par:false,basis:'med',exp:{M1:1,M2:1,P1:1,P3:1},obs:[],ses:{id:null,status:'idle',start:null,acc:0,seg:null},saved:null};
+function seed(){const d=new Date().toISOString();[['A1',440],['A1',470],['A2',650],['A5',560],['A5',540],['A3',760],['A7',230],['A6',300]].forEach(([a,n],i)=>{const A=act(a);S.obs.push({id:'O-DEMO'+(i+1),sid:'S-DEMO',team:tm(A),emp:A.e,macro:mo(A),proc:A.p,act:a,analista:'Demostración',startISO:d,endISO:d,gross:n,pausedS:0,netS:n,status:'Completada',seq:i+1,saved:true,demo:1,acc:n*1000,seg:null,pauses:[],note:''})})}
+try{const r=JSON.parse(localStorage.getItem(K)||'null');if(r){S.obs=r.obs;S.ses=r.ses;S.analyst=r.analyst||'';S.saved=r.saved}else seed()}catch(e){seed()}
+function persist(){try{localStorage.setItem(K,JSON.stringify({obs:S.obs,ses:S.ses,analyst:S.analyst,saved:S.saved}))}catch(e){}}
+const now=()=>Date.now(),net=o=>(o.acc+(o.seg?now()-o.seg:0))/1000;
+const hms=s=>{s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const ms=s=>{s=Math.round(s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const sesEl=()=>(S.ses.acc+(S.ses.seg?now()-S.ses.seg:0))/1000;
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',3200)}
+const done=a=>S.obs.filter(o=>o.act==a&&o.status=='Completada'&&(!S.emp||o.emp==S.emp)),cur=a=>S.obs.find(o=>o.act==a&&o.status!='Completada');
+const med=v=>{if(!v.length)return 0;v=[...v].sort((a,b)=>a-b);const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2};
+function work(a,b,e){return b=='med'?S.obs.filter(o=>o.act==a.id&&o.status=='Completada'&&(!e||o.emp==e)).reduce((s,o)=>s+o.netS,0)/60:a.s*a.f}
+function scope(all){return D.acts.filter(a=>all||((!S.team||tm(a)==S.team)&&(!S.emp||a.e==S.emp)))}
+function pareto(list,b,e){const rows=list.map(a=>({a,v:work(a,b,e)})).filter(r=>r.v>0&&isFinite(r.v)).sort((x,y)=>y.v-x.v);const tot=rows.reduce((s,r)=>s+r.v,0);let c=0;rows.forEach((r,i)=>{r.sh=r.v/tot*100;r.prev=c;c+=r.sh;r.cum=c;r.set=r.prev<80;r.rk=i+1});const set=rows.filter(r=>r.set);return{rows,tot,set,pct:set.length?set[set.length-1].cum:0,map:Object.fromEntries(rows.map(r=>[r.a.id,r]))}}
+function P(){return pareto(scope(),S.basis,S.emp)}
+function visible(p){const q=S.q.trim().toLowerCase();return scope().filter(a=>{if(S.par&&!p.map[a.id]?.set)return false;if(!q)return true;const e=emp(a.e),pr=proc(a.p);return[a.n,a.d,pr.n,pr.d,macro(pr.m).n,e.n,e.r].some(x=>x.toLowerCase().includes(q))})}
+const ICO={play:'<path d="M6 4l14 8-14 8z"/>',pause:'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>',stop:'<rect x="6" y="6" width="12" height="12"/>'};
+const svg=n=>`<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICO[n]}</svg>`;
+const bdg=(t,bg,c)=>`<span class="bd" style="background:${bg};color:${c}">${t}</span>`;
+function shareBadge(r){return r?(r.set?bdg(`P-80 RELEVANTE · ${r.sh.toFixed(0)}% carga`,'#FCE7F3','#C21F66'):bdg(`Proceso Estándar · ${r.sh.toFixed(0)}%`,'var(--bg)','var(--mu)')):bdg('Pendiente de datos','var(--bg)','var(--mu)')}
+function drawT(){const p=P(),vis=visible(p);let h=`<div class="row th lbl"><span></span><span>Macroproceso / Proceso / Actividad</span><span>Colaborador &amp; Rol</span><span>Frecuencia</span><span>T. Estándar</span><span>% Carga &amp; Pareto</span><span>Controles</span></div>`;
+const open=S.q.trim()||S.par;
+D.macros.forEach(m=>{const ps=D.procs.filter(x=>x.m==m.id&&vis.some(a=>a.p==x.id));if(!ps.length)return;const sh=vis.filter(a=>mo(a)==m.id).reduce((s,a)=>s+(p.map[a.id]?.sh||0),0),mx=open||S.exp[m.id];
+h+=`<div style="background:${m.bg};border-left:4px solid ${m.c};padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd);color:#253247"><button class="ic" onclick="tog('${m.id}')" aria-expanded="${!!mx}" aria-label="Expandir o contraer ${esc(m.n)}">${mx?'▾':'▸'}</button><b style="color:${m.c}">${esc(m.n)}</b><span class="sm">${ps.length} procesos</span><span style="flex:1"></span>${bdg(sh?sh.toFixed(0)+'% de la carga':'Pendiente de datos',m.c,'#fff')}</div>`;
+if(!mx)return;ps.forEach(pr=>{const as=vis.filter(a=>a.p==pr.id),psh=as.reduce((s,a)=>s+(p.map[a.id]?.sh||0),0),px=open||S.exp[pr.id],nobs=as.reduce((s,a)=>s+done(a.id).length,0);
+h+=`<div class="row"><button class="ic" onclick="tog('${pr.id}')" aria-expanded="${!!px}" aria-label="Expandir o contraer proceso">${px?'▾':'▸'}</button><div><b>${esc(pr.n)}</b><div class="sm">${esc(pr.d)}</div></div><span class="sm">${as.length} actividades</span><span class="sm">—</span><span class="sm">—</span><span>${psh?bdg(psh.toFixed(0)+'% carga','var(--hi)','#0066B3'):bdg('Pendiente de datos','var(--bg)','var(--mu)')} <span class="sm">${nobs} obs.</span></span><span></span></div>`;
+if(!px)return;as.forEach((a,i)=>{const e=emp(a.e),o=cur(a.id),d=done(a.id),n=d.map(x=>x.netS),avg=n.length?n.reduce((s,x)=>s+x,0)/n.length:0;
+h+=`<div class="row" style="background:var(--alt);${o?'border-left:3px solid #9AF51A':''}"><span></span><div style="padding-left:12px"><span class="sm">${pr.id.slice(1)}.${as.indexOf(a)+1}</span> <b>${esc(a.n)}</b><div class="sm">${esc(a.d)}${n.length?` · ${n.length} obs · prom ${ms(avg)} · mediana ${ms(med(n))}`:''}</div></div><div><b>${esc(e.n)}</b><div class="sm">${esc(e.r)}</div></div><span>${a.f} ${a.u}</span><span class="mono">${ms(a.s*60)} min</span><div>${shareBadge(p.map[a.id])}${o?' '+bdg(o.status=='Pausada'?'PAUSADA':'MIDIENDO','#10182D','#A0F51B')+` <span class="mono" data-t="${o.id}">${ms(net(o))}</span>`:''}</div>
+<div style="display:flex;gap:4px">${o?`<button class="ic" onclick="togAct('${a.id}')" aria-label="${o.seg?'Pausar':'Reanudar'}" style="background:#10182D;color:#9AF51A">${svg(o.seg?'pause':'play')}</button><button class="ic" onclick="stopAct('${a.id}')" aria-label="Finalizar medición">${svg('stop')}</button>`:`<button class="ic" onclick="startAct('${a.id}')" aria-label="Iniciar medición de ${esc(a.n)}">${svg('play')}</button>`}</div></div>`})})});
+if(!vis.length)h+=`<div style="padding:28px;text-align:center" class="sm">${S.par&&!p.set.length?'Sin datos para calcular Pareto con esta base (aún no hay mediciones completadas).':'Sin resultados para los filtros actuales.'}</div>`;
+$('#tbl').innerHTML=h;
+$('#pnote').innerHTML=S.par?`<div style="background:#FCE7F3;color:#7a1445;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600">Vista filtrada: solo actividades del Pareto 80/20 (base: ${S.basis=='med'?'carga medida':'carga estimada'}). <button class="btn" style="padding:3px 8px;font-size:11px" onclick="S.par=false;$('#par').checked=false;draw()">Ver todas</button></div>`:''}
+function drawS(){const p=P(),ses=S.ses,run=S.obs.filter(o=>o.status!='Completada'),first=run.find(o=>o.seg)||run[0],sid=ses.id,mine=S.obs.filter(o=>o.sid==sid),acc=mine.reduce((s,o)=>s+(o.status=='Completada'?o.netS:net(o)),0);
+const procs=scope().map(a=>a.p).filter((v,i,x)=>x.indexOf(v)==i),ev=procs.filter(pid=>S.obs.some(o=>o.proc==pid&&o.status=='Completada'&&scope().some(a=>a.id==o.act))).length,pc=procs.length?Math.round(ev/procs.length*100):0;
+const last=S.obs.filter(o=>o.status=='Completada'&&!o.demo).sort((a,b)=>b.endISO>a.endISO?1:-1)[0],stt={idle:['Sin iniciar','#E0E8F2','#253247'],running:['Activo','#9AF51A','#10182D'],paused:['Pausado','#FFC83D','#253247'],done:['Finalizado','#0066B3','#fff']}[ses.status];
+$('#side').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div class="lbl" style="color:var(--tx)">Resumen de sesión &amp; dedicación</div>${bdg(stt[0],stt[1],stt[2])}</div>
+<div class="card" style="background:#10182D;color:#fff"><div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:8px;height:8px;border-radius:50%;background:${ses.status=='running'?'#9AF51A':'#71829D'}"></span>${first?esc(act(first.act).n)+' · '+esc(emp(first.emp).n):ses.status=='idle'||ses.status=='done'?'Sin sesión activa. Pulsa «Iniciar Toma de Tiempos».':'Sesión activa: elige una actividad y pulsa ▶'}</div><div class="lbl" style="color:#71829D;margin-top:10px">Cronómetro maestro</div><div class="mono" id="mast" style="font-size:40px;font-weight:700;color:#A0F51B;margin:2px 0 10px">${hms(sesEl())}</div>
+<div style="display:flex;gap:6px"><button class="btn g" style="flex:1;justify-content:center" onclick="masterPause()" ${ses.status=='running'||ses.status=='paused'?'':'disabled style="flex:1;opacity:.4"'}>${ses.status=='paused'?'▶ Reanudar':'❚❚ Pausar'}</button><button class="btn" style="background:#27324D;color:#fff" onclick="finish()" ${ses.status=='running'||ses.status=='paused'?'':'disabled'}>■ Finalizar</button></div></div>
+<div class="card" style="background:#202744;color:#fff"><div class="lbl" style="color:#A9B4D6">Tiempo Total Acumulado</div><div class="mono" id="acc" style="font-size:24px;font-weight:700;margin:4px 0">${hms(acc)}</div><div style="font-size:11px;color:#A9B4D6">Suma de tiempos netos medidos en esta sesión (no es el tiempo transcurrido de la sesión).</div></div>
+<div class="card" style="border:1px solid var(--bd)"><div class="lbl">Procesos evaluados (${S.emp?'colaborador':'equipo'} seleccionado)</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 8px"><b style="font-size:22px">${ev} / ${procs.length} procesos</b><b style="color:#0066B3">${pc}%</b></div><div style="height:8px;border-radius:99px;background:var(--bd)"><div style="width:${pc}%;height:100%;border-radius:99px;background:#0066B3"></div></div></div>
+<div class="card" style="background:#FCE7F3;color:#253247"><div class="lbl" style="color:#C21F66">Concentración Crítica Pareto</div>${p.rows.length?`<div style="font-size:26px;font-weight:800;color:#C21F66">${p.pct.toFixed(1)}%</div><div style="font-size:12px;margin-top:2px">${p.set.length} de ${p.rows.length} actividades analizadas. Solo ${p.set.length} actividades representan ${p.pct.toFixed(1)}% de ${S.basis=='med'?'las horas medidas':'la carga estimada'}.</div>`:'<div style="font-size:12px;margin-top:6px">No calculable: aún no hay mediciones completadas en este alcance.</div>'}</div>
+<div class="card" style="border:1px solid var(--bd)"><div class="lbl">Última medición completada</div>${last?`<div style="font-weight:700;font-size:13px;margin-top:4px">${esc(act(last.act).n)}</div><div class="sm">${esc(emp(last.emp).n)} · <b class="mono" style="color:var(--tx)">${ms(last.netS)}</b> · ${new Date(last.endISO).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}</div>${bdg(last.saved?'Guardado':'Sin consolidar',last.saved?'#55E7B0':'#FFC83D','#253247')}`:'<div class="sm" style="margin-top:4px">Aún no hay mediciones completadas en esta sesión.</div>'}</div>
+<div style="flex:1"></div><button class="btn" style="background:#0066B3;color:#fff;width:100%;justify-content:center;padding:14px" onclick="save()">Guardar y Consolidar Registro</button><div class="sm" style="text-align:center">${S.saved?'Último guardado local: '+new Date(S.saved).toLocaleTimeString('es-PE'):'Sin guardado local aún'}</div>`}
+function tick(){const m=$('#mast');if(!m)return;m.textContent=hms(sesEl());const mine=S.obs.filter(o=>o.sid==S.ses.id);$('#acc').textContent=hms(mine.reduce((s,o)=>s+(o.status=='Completada'?o.netS:net(o)),0));document.querySelectorAll('[data-t]').forEach(e=>{const o=S.obs.find(x=>x.id==e.dataset.t);if(o)e.textContent=ms(net(o))})}
+function draw(){drawT();drawS()}
+function tog(id){S.exp[id]=!S.exp[id];drawT()}
+function setTeam(t){S.team=t;S.emp='';fillEmp();draw()}
+function fillEmp(){$('#se').innerHTML='<option value="">Todos los Colaboradores</option>'+D.emps.filter(e=>e.t==S.team).map(e=>`<option value="${e.id}">${esc(e.n)}</option>`).join('')}
+function startSession(){if(S.ses.status=='running'||S.ses.status=='paused')return toast('Ya hay una sesión en curso.');S.ses={id:'S-'+Date.now().toString(36).toUpperCase(),status:'running',start:new Date().toISOString(),acc:0,seg:now()};persist();draw();toast('Sesión iniciada.')}
+function masterPause(){const s=S.ses;if(s.status=='running'){s.acc+=now()-s.seg;s.seg=null;s.status='paused';S.obs.forEach(o=>{if(o.status=='En curso'){o.acc+=now()-o.seg;o.seg=null;o.status='Pausada';o.mp=1;o.pauses.push({p:new Date().toISOString()})}})}else if(s.status=='paused'){s.seg=now();s.status='running';S.obs.forEach(o=>{if(o.mp){o.seg=now();o.status='En curso';o.mp=0;o.pauses[o.pauses.length-1].r=new Date().toISOString()}})}persist();draw()}
+function startAct(id){if(S.ses.status!='running')return toast(S.ses.status=='paused'?'La sesión está en pausa: reanúdala primero.':'Primero pulsa «Iniciar Toma de Tiempos».');const a=act(id);if(S.obs.some(o=>o.emp==a.e&&o.status!='Completada'))return toast(emp(a.e).n+' ya tiene una medición activa.');
+if(!S.analyst)return askName();const seq=S.obs.filter(o=>o.act==id&&o.emp==a.e).length+1;S.obs.push({id:'O-'+Date.now().toString(36).toUpperCase(),sid:S.ses.id,team:tm(a),emp:a.e,macro:mo(a),proc:a.p,act:id,analista:S.analyst,startISO:new Date().toISOString(),endISO:null,gross:0,pausedS:0,netS:0,status:'En curso',seq,saved:false,acc:0,seg:now(),pauses:[],note:''});persist();draw();toast('Medición iniciada: '+a.n)}
+function togAct(id){const o=cur(id);if(!o)return;if(o.seg){o.acc+=now()-o.seg;o.seg=null;o.status='Pausada';o.pauses.push({p:new Date().toISOString()});toast('Medición en pausa.')}else{if(S.ses.status!='running')return toast('La sesión está en pausa.');o.seg=now();o.status='En curso';o.mp=0;o.pauses[o.pauses.length-1].r=new Date().toISOString()}persist();draw()}
+function end(o){const t=now();if(o.seg){o.acc+=t-o.seg;o.seg=null}o.endISO=new Date(t).toISOString();o.netS=o.acc/1000;o.gross=Math.max(o.netS,(t-Date.parse(o.startISO))/1000);o.pausedS=o.gross-o.netS;o.status='Completada';o.saved=false}
+function stopAct(id){const o=cur(id);if(!o)return;end(o);persist();draw();toast('Medición completada: '+ms(o.netS)+' min netos.')}
+function finish(){const s=S.ses;if(s.status!='running'&&s.status!='paused')return;const run=S.obs.filter(o=>o.status!='Completada');if(!confirm(run.length?`Hay ${run.length} medición(es) activa(s). Se completarán al finalizar la sesión. ¿Continuar?`:'¿Finalizar la sesión?'))return;run.forEach(end);if(s.seg){s.acc+=now()-s.seg;s.seg=null}s.status='done';persist();draw();toast('Sesión finalizada.')}
+function save(){try{S.obs.forEach(o=>{if(o.status=='Completada')o.saved=true});S.saved=now();localStorage.setItem(K,JSON.stringify({obs:S.obs,ses:S.ses,analyst:S.analyst,saved:S.saved}));draw();toast('Registro guardado localmente.')}catch(e){toast('No se pudo guardar en este navegador.')}}
+function stats(a){const n=S.obs.filter(o=>o.act==a.id&&o.status=='Completada').map(o=>o.netS/60),t=n.reduce((s,x)=>s+x,0);return{n:n.length,t,avg:n.length?t/n.length:'',md:n.length?med(n):'',mn:n.length?Math.min(...n):'',mx:n.length?Math.max(...n):''}}
+function exportXls(){try{if(typeof XLSX=='undefined')throw new Error('La librería de Excel no cargó.');const b=S.basis,P2=pareto(scope(true),b,''),pm=P2.map,all=scope(true),wb=XLSX.utils.book_new(),pp=v=>typeof v=='number'?+(v/100).toFixed(4):v;
+const add=(n,rows)=>{const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map(()=>({wch:22}));if(rows.length>1&&rows[0].length>1&&n!='Resumen Ejecutivo'&&n!='Catalogos')ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length-1,c:rows[0].length-1}})};XLSX.utils.book_append_sheet(wb,ws,n)};
+const ob=S.obs.filter(o=>o.status=='Completada'),sc=a=>D.teams.find(t=>t.id==a).n;
+add('Resumen Ejecutivo',[['Concepto','Valor'],['Fecha de exportación',new Date().toLocaleString('es-PE')],['Analista',S.analyst],['Sesión actual',S.ses.id||'—'],['Estado de sesión',S.ses.status],['Alcance de exportación','Todos los registros locales (ignora filtros)'],['Macroprocesos',D.macros.length],['Procesos',D.procs.length],['Actividades',D.acts.length],['Observaciones completadas',ob.length],['Tiempo neto medido (min)',+(ob.reduce((s,o)=>s+o.netS,0)/60).toFixed(2)],['Carga estimada (min/día)',+D.acts.reduce((s,a)=>s+a.s*a.f,0).toFixed(1)],['Base Pareto',b=='med'?'Carga medida':'Carga estimada'],['Actividades en el Pareto 80%',P2.set.length],['Concentración Pareto (%)',P2.rows.length?+P2.pct.toFixed(2):'No calculable'],['Aviso','Datos de demostración (O-DEMO*) no son datos reales de BanBif. Capacidad/ratio de carga no configurados.']]);
+add('Mediciones',[['ID','Sesión','Equipo ID','Equipo','Colaborador ID','Colaborador','Rol','Macroproceso','Proceso ID','Proceso','Actividad ID','Actividad','Analista','Inicio','Fin','Bruto (s)','Pausas (s)','Neto (s)','Neto (min)','Estado','Secuencia','Notas','Guardado']].concat(ob.map(o=>{const a=act(o.act),e=emp(o.emp);return[o.id,o.sid,o.team,sc(o.team),e.id,e.n,e.r,macro(o.macro).n,o.proc,proc(o.proc).n,a.id,a.n,o.analista,o.startISO,o.endISO,+o.gross.toFixed(3),+o.pausedS.toFixed(3),+o.netS.toFixed(3),+(o.netS/60).toFixed(4),o.status,o.seq,o.note,o.saved?'Sí':'No']})));
+add('Actividades',[['ID','Proceso','Macroproceso','Actividad','Descripción','T. estándar (min)','Frecuencia','Unidad','Carga estimada (min/día)','Obs. válidas','Total medido (min)','Promedio (min)','Mediana (min)','Mín (min)','Máx (min)','% carga (base)','% acumulado','Pareto']].concat(all.map(a=>{const s=stats(a),r=pm[a.id];return[a.id,proc(a.p).n,macro(mo(a)).n,a.n,a.d,a.s,a.f,a.u,a.s*a.f,s.n,+s.t.toFixed(3),s.avg,s.md,s.mn,s.mx,r?pp(r.sh):'Pendiente de datos',r?pp(r.cum):'',r?(r.set?'P-80':'Estándar'):'N/A']})));
+const grp=(list,key,nm)=>list.map(x=>{const as=D.acts.filter(a=>key(a)==x.id),os=ob.filter(o=>as.some(a=>a.id==o.act)),t=os.reduce((s,o)=>s+o.netS,0)/60;return[x.id,nm(x),as.length,os.length,+t.toFixed(3),as.reduce((s,a)=>s+a.s*a.f,0),as.reduce((s,a)=>s+(pm[a.id]?.sh||0),0)/100,as.filter(a=>pm[a.id]?.set).length]});
+const gh=['ID','Nombre','Actividades','Obs. válidas','Total medido (min)','Carga estimada (min/día)','Participación en carga','Actividades Pareto'];
+add('Procesos',[gh].concat(grp(D.procs,a=>a.p,p=>p.n)));add('Macroprocesos',[gh].concat(grp(D.macros,a=>mo(a),m=>m.n)));add('Colaboradores',[gh.concat('Equipo')].map(h=>h)[0]&&[gh.concat('Equipo','Rol')].concat(grp(D.emps,a=>a.e,e=>e.n).map((r,i)=>r.concat(sc(D.emps[i].t),D.emps[i].r))));
+add('Pareto',[['Rank','Actividad ID','Actividad','Proceso','Macroproceso','Equipo','Colaborador','Base','Valor (min)','% carga','% acumulado','En Pareto 80%']].concat(P2.rows.map(r=>[r.rk,r.a.id,r.a.n,proc(r.a.p).n,macro(mo(r.a)).n,sc(tm(r.a)),emp(r.a.e).n,b=='med'?'Medida':'Estimada',+r.v.toFixed(3),pp(r.sh),pp(r.cum),r.set?'Sí':'No'])));
+add('Catalogos',[['Tipo','ID','Nombre','Detalle']].concat(D.teams.map(t=>['Equipo',t.id,t.n,'']),D.emps.map(e=>['Colaborador',e.id,e.n,e.r+' / '+sc(e.t)]),D.macros.map(m=>['Macroproceso',m.id,m.n,'']),D.procs.map(p=>['Proceso',p.id,p.n,p.m]),D.acts.map(a=>['Actividad',a.id,a.n,`${a.s} min · ${a.f} ${a.u}`]),[['Unidad de frecuencia','','por día','']]));
+XLSX.writeFile(wb,'BanBif_Levantamiento_Tiempos_'+new Date().toISOString().slice(0,10)+'.xlsx');toast('Excel generado con '+wb.SheetNames.length+' hojas.')}catch(e){toast('Error al exportar: '+e.message)}}
+function askName(){$('#nm').value=S.analyst;$('#modal').style.display='flex';$('#app').setAttribute('inert','');setTimeout(()=>$('#nm').focus(),30)}
+function enter(ev){ev.preventDefault();const v=$('#nm').value.trim();if(!v)return false;S.analyst=v;persist();$('#modal').style.display='none';$('#app').removeAttribute('inert');who();toast('Bienvenido/a, '+v);return false}
+function who(){$('#who').textContent='👤 '+(S.analyst||'Analista')+' · Cambiar'}
+$('#st').innerHTML=D.teams.map(t=>`<option value="${t.id}">${esc(t.n)}</option>`).join('');fillEmp();who();draw();setInterval(tick,500);askName();
+</script>
+</body>
+</html>
